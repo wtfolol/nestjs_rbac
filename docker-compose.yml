@@ -1,0 +1,93 @@
+# version: "3.9"
+
+# services:
+#   db:
+#     image: postgres:16
+#     container_name: rbac_db
+#     environment:
+#       POSTGRES_USER: postgres
+#       POSTGRES_PASSWORD: postgres
+#       POSTGRES_DB: rbac_db
+#     ports:
+#       - "5432:5432"
+#     volumes:
+#       - db_data:/var/lib/postgresql/data
+
+#   app:
+#     build: .
+#     container_name: rbac_app
+#     environment:
+#       DATABASE_URL: postgres://postgres:postgres@db:5432/rbac_db?schema=public
+#     ports:
+#       - "3000:3000"
+#     volumes:
+#       - ./src:/usr/src/app/src:cached
+#       - ./prisma:/usr/src/app/prisma:cached
+#       - /usr/src/app/node_modules
+#     working_dir: /usr/src/app
+#     command: npm run start:dev
+#     stdin_open: true
+#     tty: true
+
+# volumes:
+#   db_data:
+
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: rbac_app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/rbac"
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./src:/usr/src/app/src        # Only mount source files
+      - ./prisma:/usr/src/app/prisma  # Prisma folder
+      - /usr/src/app/node_modules     # Keep node_modules in container
+    command: >
+      sh -c "
+        # npx prisma generate &&
+        # npx prisma migrate deploy &&
+        npm run start:dev
+      "
+
+    stdin_open: true
+    tty: true
+    # ---------------------------
+    # Compose Watch configuration
+    # ---------------------------
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /usr/src/app/src
+          ignore:
+            - node_modules/
+        - action: sync
+          path: ./prisma
+          target: /usr/src/app/prisma
+        - action: rebuild
+          path: package.json
+          ignore:
+            - node_modules/
+
+  db:
+    image: postgres:15
+    container_name: rbac_db
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: rbac
+    ports:
+      - "5433:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+
+volumes:
+  dbdata:

@@ -1,0 +1,48 @@
+Throttler
+
+mailer(reset or register)
+
+logger
+
+Replay detection:
+If old token is used again → block user → flag account.
+
+account locked
+
+6. Permission-based RBAC (fine-grained)
+
+Roles:
+
+ADMIN
+
+MANAGER
+
+USER
+
+Permissions (fine-grained):
+
+users.read
+
+users.update
+
+projects.create
+
+etc.
+
+Tables:
+
+roles
+
+permissions
+
+role_permissions
+
+Usage:
+
+Instead of @Roles('ADMIN'), use:
+
+@Permissions('users.read')
+
+
+app name    rbac-nestjs
+app password ohsk dqfn tbup jgwe
