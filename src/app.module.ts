@@ -13,9 +13,12 @@ import {
   ThrottlerModule,
   ThrottlerStorage,
 } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { createHash } from 'crypto';
+import { LoggerModule } from './common/logger/logger.module';
+import { RequestLoggerInterceptor } from './common/interceptor/request-logger.interceptor';
+import { AllExceptionsFilter } from './common/filter/all-exception.filter';
 
 @Module({
   imports: [
@@ -24,6 +27,7 @@ import { createHash } from 'crypto';
     UserModule,
     ConfigModule.forRoot({ isGlobal: true }),
     mailerModule,
+    LoggerModule, 
     ThrottlerModule.forRoot({
       throttlers: [
         {
@@ -57,6 +61,14 @@ import { createHash } from 'crypto';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RequestLoggerInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
     },
   ],
 })

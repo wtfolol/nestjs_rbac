@@ -6,25 +6,34 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { Request, Response } from 'express';
+import { AppLoggerService } from '../logger/app-logger.service';
 
 @Injectable()
 export class RequestLoggerInterceptor implements NestInterceptor {
+  constructor(private readonly logger: AppLoggerService) {}
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const req = context.switchToHttp().getRequest();
+    const httpCtx = context.switchToHttp();
+    const request = httpCtx.getRequest<Request>();
+    const response = httpCtx.getResponse<Response>();
 
-    const details = {
-      method: req.method,
-      url: req.url,
-      ip: req.headers['x-forwarded-for'] || req.ip,
-      userAgent: req.headers['user-agent'],
-      headers: req.headers,
-      body: req.body,
-      query: req.query,
-      params: req.params,
-    };
+    const { method, originalUrl } = request;
+    const start = Date.now();
 
-    console.log('Caller Details:', details);
+    return next.handle().pipe(
+      tap({
+        next: () => {
+          const duration = Date.now() - start;
 
-    return next.handle();
+          this.logger.log('HTTP request completed', {
+            method,
+            path: originalUrl,
+            durationMs: duration,
+            statusCode: response.statusCode,
+          });
+        },
+      }),
+    );
   }
 }
